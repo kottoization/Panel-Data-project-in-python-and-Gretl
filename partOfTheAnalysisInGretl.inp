@@ -1,0 +1,146 @@
+
+genr logQ = log(Q)
+
+panel C 0 Q PF LF 
+
+# Stworzenie zmiennej wsk, która indeksuje przekroje
+series wsk = 1
+loop for (t = 2; t <= 15*6; t = t + 1)
+    if (I[t] != I[t - 1])
+        wsk[t] = wsk[t - 1] + 1
+    else
+        wsk[t] = wsk[t - 1]
+    endif
+endloop
+
+# Inicjalizacja zmiennej na reszty
+series reszty = 0
+
+# Przekształcenie Price-Winstena
+loop for (j = 1; j <= 6; j = j + 1)
+    smpl wsk == j --restrict
+    ols C 0 Q PF LF
+    reszty = $uhat
+    corr(reszty, reszty(-1))
+
+    smpl full
+endloop
+
+# Eliminacja Heteroskedastyczności
+series C_2 = C / sqrt(reszty^2)
+
+##################################################
+
+panel C 0 Q PF LF 
+smpl full
+
+series wsk = 1
+loop for (i=1; i<6*15; i=i+1)
+    if (I[i+1] != I[i])
+        wsk[i+1] = wsk[i]+1
+    else
+        wsk[i+1] = wsk[i]
+    endif
+endloop
+
+series reszty = 0
+matrix A = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+
+loop for (j=1; j<=6; j=j+1)
+    smpl wsk==j --restrict
+    ols C 0 Q PF LF
+    reszty = $uhat
+    ols reszty reszty(-1) 
+    smpl full
+endloop
+
+smpl full
+loop for (d=1; d<=6; d=d+1)
+    print A[d]
+endloop
+
+smpl full
+series res = 0
+series r = 0
+series r2 = 0
+series new_C = 0
+series new_Q = 0
+series new_PF = 0
+series new_LF = 0
+
+loop for (j=1; j<=6; j=j+1)
+    smpl wsk==j --restrict
+    ols C 0 Q PF LF
+    res = $uhat
+    r = corr(res, res(-1))
+    r2 = r*r
+    new_C = C - C(-1)*r
+    new_Q = Q - Q(-1)*r
+    new_PF = PF - PF(-1)*r
+    new_LF = LF - LF(-1)*r
+    smpl full
+endloop
+
+new_C[1:1] = sqrt(1-r2[1:1]) * C[1:1]
+new_C[2:1] = sqrt(1-r2[2:1]) * C[2:1]
+new_C[3:1] = sqrt(1-r2[3:1]) * C[3:1]
+new_C[4:1] = sqrt(1-r2[4:1]) * C[4:1]
+new_C[5:1] = sqrt(1-r2[5:1]) * C[5:1]
+new_C[6:1] = sqrt(1-r2[6:1]) * C[6:1]
+
+new_Q[1:1] = sqrt(1-r2[1:1]) * Q[1:1]
+new_Q[2:1] = sqrt(1-r2[2:1]) * Q[2:1]
+new_Q[3:1] = sqrt(1-r2[3:1]) * Q[3:1]
+new_Q[4:1] = sqrt(1-r2[4:1]) * Q[4:1]
+new_Q[5:1] = sqrt(1-r2[5:1]) * Q[5:1]
+new_Q[6:1] = sqrt(1-r2[6:1]) * Q[6:1]
+
+new_PF[1:1] = sqrt(1-r2[1:1]) * PF[1:1]
+new_PF[2:1] = sqrt(1-r2[2:1]) * PF[2:1]
+new_PF[3:1] = sqrt(1-r2[3:1]) * PF[3:1]
+new_PF[4:1] = sqrt(1-r2[4:1]) * PF[4:1]
+new_PF[5:1] = sqrt(1-r2[5:1]) * PF[5:1]
+new_PF[6:1] = sqrt(1-r2[6:1]) * PF[6:1]
+
+new_LF[1:1] = sqrt(1-r2[1:1]) * LF[1:1]
+new_LF[2:1] = sqrt(1-r2[2:1]) * LF[2:1]
+new_LF[3:1] = sqrt(1-r2[3:1]) * LF[3:1]
+new_LF[4:1] = sqrt(1-r2[4:1]) * LF[4:1]
+new_LF[5:1] = sqrt(1-r2[5:1]) * LF[5:1]
+new_LF[6:1] = sqrt(1-r2[6:1]) * LF[6:1]
+
+series res = 0
+
+panel new_C 0 new_Q new_PF new_LF --time-dummies
+
+res = $uhat
+r = corr(res, res(-1))
+r2 = r*r
+
+new_C[1:1] = sqrt(1-r2[1:1]) * new_C[1:1]
+new_C[2:1] = sqrt(1-r2[2:1]) * new_C[2:1]
+new_C[3:1] = sqrt(1-r2[3:1]) * new_C[3:1]
+new_C[4:1] = sqrt(1-r2[4:1]) * new_C[4:1]
+new_C[5:1] = sqrt(1-r2[5:1]) * new_C[5:1]
+new_C[6:1] = sqrt(1-r2[6:1]) * new_C[6:1]
+
+new_Q[1:1] = sqrt(1-r2[1:1]) * new_Q[1:1]
+new_Q[2:1] = sqrt(1-r2[2:1]) * new_Q[2:1]
+new_Q[3:1] = sqrt(1-r2[3:1]) * new_Q[3:1]
+new_Q[4:1] = sqrt(1-r2[4:1]) * new_Q[4:1]
+new_Q[5:1] = sqrt(1-r2[5:1]) * new_Q[5:1]
+new_Q[6:1] = sqrt(1-r2[6:1]) * new_Q[6:1]
+
+new_PF[1:1] = sqrt(1-r2[1:1]) * new_PF[1:1]
+new_PF[2:1] = sqrt(1-r2[2:1]) * new_PF[2:1]
+new_PF[3:1] = sqrt(1-r2[3:1]) * new_PF[3:1]
+new_PF[4:1] = sqrt(1-r2[4:1]) * new_PF[4:1]
+new_PF[5:1] = sqrt(1-r2[5:1]) * new_PF[5:1]
+new_PF[6:1] = sqrt(1-r2[6:1]) * new_PF[6:1]
+
+new_LF[1:1] = sqrt(1-r2[1:1]) * new_LF[1:1]
+new_LF[2:1] = sqrt(1-r2[2:1]) * new_LF[2:1]
+new_LF[3:1] = sqrt(1-r2[3:1]) * new_LF[3:1]
+new_LF[4:1] = sqrt(1-r2[4:1]) * new_LF[4:1]
+new_LF[5:1] = sqrt(1-r2[5:1]) * new_LF[5:1]
+new_LF[6:1] = sqrt(1-r2[6:1]) * new_LF[6:1]
